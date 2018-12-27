@@ -74,11 +74,11 @@ public class MWListenerPost implements Listener {
         // We are handling this at the very end, so we can remove the portal as we get it
         Portal lastPortal = getLastEntered(player, true);
         if (lastPortal != null) {
-            // Show the portal name
-            Localization.PORTAL_ENTER.message(player, lastPortal.getDestinationDisplayName());
+            // Show the portal name (disabled for this branch)
+            // Localization.PORTAL_ENTER.message(player, lastPortal.getDestinationDisplayName());
         } else if (to.getWorld() != player.getWorld()) {
-            // Show world enter message
-            Localization.WORLD_ENTER.message(player, to.getWorld().getName());
+            // Show world enter message (disabled for this branch)
+            // Localization.WORLD_ENTER.message(player, to.getWorld().getName());
         }
     }
 
