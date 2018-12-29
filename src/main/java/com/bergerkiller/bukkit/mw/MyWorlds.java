@@ -191,6 +191,9 @@ public class MyWorlds extends PluginBase {
 
         // World inventories
         WorldInventory.load();
+        
+        // World groups
+        WorldGroup.load();
 
         // Player data controller
         dataController = new MWPlayerDataController();
@@ -214,7 +217,11 @@ public class MyWorlds extends PluginBase {
         // Make sure to save all players before disabling - this prevents lost state
         for (Player player : Bukkit.getOnlinePlayers()) {
             CommonUtil.savePlayer(player);
+            WorldGroup.savePlayerWorld(player);
         }
+        
+        // Save world groups
+        WorldGroup.save();
 
         // Detach data controller. Only do so when reloading, do not do it when
         // shutting down so we handle player saving correctly.

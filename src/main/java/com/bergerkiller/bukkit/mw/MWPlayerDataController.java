@@ -422,7 +422,7 @@ public class MWPlayerDataController extends PlayerDataController {
                     }
                 });
             }
-
+            
             // Save data to the destination file
             files.currentFile.write(savedData);
 
@@ -437,6 +437,10 @@ public class MWPlayerDataController extends PlayerDataController {
                         data.putUUID("World", files.human.getWorld().getUID());
                     }
                 });
+            }
+            
+            if (human instanceof Player) {
+            	WorldGroup.savePlayerWorld((Player) human);
             }
         } catch (Exception exception) {
             Bukkit.getLogger().warning("Failed to save player data for " + human.getName());
