@@ -357,7 +357,9 @@ public class Command {
                     rval = new TeleportPortal();
                 } else if (cmdLabel.equalsIgnoreCase("inventory")) {
                     rval = new WorldInventory();
-                } else if (cmdLabel.equalsIgnoreCase("inv")) {
+                } else if (cmdLabel.equalsIgnoreCase("group")) {
+                    rval = new WorldGroupCommand();
+                }  else if (cmdLabel.equalsIgnoreCase("inv")) {
                     rval = new WorldInventory();
                 } else if (cmdLabel.equalsIgnoreCase("togglerespawn")) {
                     rval = new WorldSetForcedRespawn();

@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.World.Environment;
@@ -97,6 +98,36 @@ public class Portal extends PortalStore {
                 } else {
                     loc = WorldManager.getSpawnLocation(w);
                 }
+            }
+            else if (WorldGroup.get(this.destination) != null){
+            	WorldGroup group = WorldGroup.get(this.destination);
+            	
+            	if (player != null) {
+            		if (!group.hasWorld(player.getWorld().getName())) {
+                		String toWorld = WorldManager.matchWorld(group.getWorldForPlayer(player.getUniqueId()));
+            			
+            			if (toWorld != null) {
+            				World world = WorldManager.getWorld(toWorld);
+            	            if (world != null) {
+            	                if (MyWorlds.portalToLastPosition) {
+            	                    loc = WorldManager.getPlayerWorldSpawn(player, world);
+            	                } else {
+            	                    loc = WorldManager.getSpawnLocation(world);
+            	                }
+            	            }
+                		}
+                	}
+                	else {
+                		if (MyWorlds.portalToLastPosition) {
+    	                    loc = WorldManager.getPlayerWorldSpawn(player, player.getWorld());
+    	                } else {
+    	                    loc = WorldManager.getSpawnLocation(player.getWorld());
+    	                }
+                	}
+            	}
+            	else {
+            		loc = WorldManager.getSpawnLocation(WorldManager.getWorld(WorldManager.matchWorld(group.getDefaultWorld())));
+            	}
             }
         }
         return loc;
@@ -263,7 +294,7 @@ public class Portal extends PortalStore {
             } else {
                 p.destdisplayname = lines[3];
             }
-            // Set portal locatiol using sign location and orientation
+            // Set portal location using sign location and orientation
             p.location = signblock.getLocation();
             MaterialData data = signblock.getState().getData();
             float yaw = 0;

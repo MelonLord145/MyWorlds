@@ -11,6 +11,7 @@ import org.bukkit.entity.Player;
 import com.bergerkiller.bukkit.mw.Localization;
 import com.bergerkiller.bukkit.mw.Permission;
 import com.bergerkiller.bukkit.mw.Portal;
+import com.bergerkiller.bukkit.mw.WorldGroup;
 import com.bergerkiller.bukkit.mw.WorldManager;
 
 public class TeleportPortal extends Command {
@@ -89,7 +90,46 @@ public class TeleportPortal extends Command {
                         } else {
                             message(ChatColor.YELLOW + "World '" + worldname + "' is not loaded!");
                         }
-                    } else {
+                    }
+                    else if (WorldGroup.get(dest) != null) { //Match world group
+                    	WorldGroup group = WorldGroup.get(dest);
+                    	
+                    	int succcount = 0;
+                    	
+                    	for (Player target : targets) {
+                    		//If the target is not already in the world group, teleport them to the last world in the group they were in.
+                    		if (!group.hasWorld(target.getWorld().getName())) {
+                    			String toWorld = WorldManager.matchWorld(group.getWorldForPlayer(target.getUniqueId()));
+                    			
+                    			if (toWorld != null) {
+                        			World w = WorldManager.getWorld(toWorld);
+                        			if (w != null) {
+                        				if (WorldManager.teleportToWorld(target, w)) {
+                                            //Success
+                                            succcount++;
+                                        }
+                        			}
+                        			else {
+                        				message(ChatColor.YELLOW + "World '" + toWorld + "' is not loaded!");
+                        			}
+                        		}
+                    		}
+                    		else {
+                    			if (WorldManager.teleportToWorld(target, target.getWorld())) {
+                                    //Success
+                                    succcount++;
+                                }
+                    		}
+                    	}
+                    	
+                    	// Show message, but don't if only the sender was teleported
+                        // He already receives an enter message by the teleport listener
+                        if (targets.length > 1 || targets[0] != sender) {
+                            message(ChatColor.YELLOW.toString() + succcount + "/" + targets.length + 
+                                    " Players have been teleported to world group '" + dest + "'!");
+                        }
+                    }
+                    else {
                         Localization.PORTAL_NOTFOUND.message(sender, dest);
                         listPortals(Portal.getPortals());
                     }

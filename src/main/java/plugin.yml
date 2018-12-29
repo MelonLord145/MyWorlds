@@ -33,6 +33,7 @@ commands:
             /world allowspawn - Allow mobs to spawn
             /world denyspawn - Deny mobs from spawning
             /world inventory - Manage world inventories
+            /world group - Manage world groups
             /world saving - Toggle world saving on/off
             /world spawnloaded - Toggle spawn loaded on/off
             /world forcedrespawn - Toggle forced respawn on/off
@@ -170,6 +171,14 @@ commands:
             /world inventory disable [world]
             /world inventory split [world...]
             /world inventory merge [world1] [world...]
+    world group:
+        description: Modifies world groups
+        usage: |
+            /world group create [name] [default world]
+            /world group delete [name]
+            /world group add [name] [world]
+            /world group remove [name] [world]
+            /world group setdefaultworld [name] [world]
     world saving:
         description: Turns world saving on or off
         usage: |

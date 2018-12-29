@@ -38,6 +38,7 @@ public class Permission extends PermissionEnum {
     public static final Permission COMMAND_SETFORCEDSPAWN = new Permission("world.setforcedspawn", PermissionDefault.OP, "Sets if the player can change whether all players force-respawn at the world spawn");
     public static final Permission COMMAND_SETREMEMBERLASTPOS = new Permission("world.setrememberlastpos", PermissionDefault.OP, "Sets if the player can change whether worlds remember the last player positions");
     public static final Permission COMMAND_INVENTORY = new Permission("world.inventory", PermissionDefault.OP, "Sets if the player can alter the inventory states of a world");
+    public static final Permission COMMAND_GROUP = new Permission("world.group", PermissionDefault.OP, "Sets if the player can alter world groups");
     public static final Permission COMMAND_TOGGLERESPAWN = new Permission("world.togglerespawn", PermissionDefault.OP, "Sets if the player can toggle the forced respawn to the world spawn");
     public static final Permission COMMAND_SPOUTWEATHER = new Permission("world.spoutweather", PermissionDefault.OP, "Sets if player can toggle virtual weather changes using Spout Plugin");
     public static final Permission COMMAND_FORMING = new Permission("world.forming", PermissionDefault.OP, "Sets if the player can toggle snow and ice forming on or off");
