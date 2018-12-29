@@ -32,33 +32,33 @@ public class WorldGroup {
     	return groups.get(groupName);
     }
     
-	public static HashMap<String, WorldGroup> getAll() {
+    public static HashMap<String, WorldGroup> getAll() {
         return groups;
     }
 	
-	public static Set<WorldGroup> getGroupsContainingWorld(String world) {
-		Set<WorldGroup> groupSet = new HashSet<WorldGroup>();
-		for (WorldGroup group : groups.values()) {
-			if (group.hasWorld(world)) {
-				groupSet.add(group);
-			}
-		}
-		return groupSet;
-	}
+    public static Set<WorldGroup> getGroupsContainingWorld(String world) {
+    	Set<WorldGroup> groupSet = new HashSet<WorldGroup>();
+    	for (WorldGroup group : groups.values()) {
+    		if (group.hasWorld(world)) {
+    			groupSet.add(group);
+    		}
+    	}
+    	return groupSet;
+    }
 	
-	public static void savePlayerWorld(Player player) {
-		String currentWorld = player.getWorld().getName();
-		for (WorldGroup group : getGroupsContainingWorld(currentWorld)) {
-			group.setLastWorld(player.getUniqueId(), currentWorld);
-		}
-	}
+    public static void savePlayerWorld(Player player) {
+    	String currentWorld = player.getWorld().getName();
+    	for (WorldGroup group : getGroupsContainingWorld(currentWorld)) {
+    		group.setLastWorld(player.getUniqueId(), currentWorld);
+    	}
+    }
 
     public static void load() {
         groups.clear();
         FileConfiguration config = new FileConfiguration(MyWorlds.plugin, "worldgroups.yml");
         config.load();
         for (ConfigurationNode node : config.getNodes()) {
-        	String defaultWorld = node.get("defaultWorld", String.class);
+    	    String defaultWorld = node.get("defaultWorld", String.class);
             List<String> worlds = node.getList("worlds", String.class);
             Map<String, String> playerData = node.getNode("playerData").getValues(String.class);
             
@@ -78,10 +78,10 @@ public class WorldGroup {
             	UUID player;
             	
             	try {
-            		player = UUID.fromString(uuidString);
+            	    player = UUID.fromString(uuidString);
             	} 
             	catch (IllegalArgumentException e) {
-            		continue;
+            	    continue;
             	}
             	
             	group.setLastWorld(player, world);
@@ -129,9 +129,9 @@ public class WorldGroup {
     	Iterator<String> iterator = playerData.values().iterator();
     	
     	while(iterator.hasNext()) {
-    		if (iterator.next().equals(world)) {
-    			iterator.remove();
-    		}
+    	    if (iterator.next().equals(world)) {
+    	    	iterator.remove();
+    	    }
     	}
     }
     
@@ -157,10 +157,10 @@ public class WorldGroup {
     
     public String getWorldForPlayer(UUID player) {
     	if (this.playerData.containsKey(player)) {
-    		return this.playerData.get(player);
+    	    return this.playerData.get(player);
     	}
     	else {
-    		return this.getDefaultWorld();
+    	    return this.getDefaultWorld();
     	}
     }
 }
