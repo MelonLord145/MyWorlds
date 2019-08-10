@@ -371,7 +371,6 @@ public class MWListener implements Listener {
     public void onPlayerChangedWorld(final PlayerChangedWorldEvent event) {
         WorldConfig.get(event.getFrom()).onPlayerLeft(event.getPlayer());
         WorldConfig.get(event.getPlayer()).onPlayerEnter(event.getPlayer());
-        event.getPlayer().updateInventory();
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
