@@ -6,7 +6,6 @@ World Management plugin for Bukkit.
 # Changes from original:
 * Removed unwanted (in my case (breaks immersion)) teleport messages.
 * Added world groups
-* Fix inventory de-sync (players inventory showing empty) when travelling between worlds with shared inventories.
 
 ## World Groups
 World groups are a portal destination that picks the last world of a set of worlds the player was on.

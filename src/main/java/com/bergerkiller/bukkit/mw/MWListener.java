@@ -51,7 +51,6 @@ public class MWListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onWorldUnload(WorldUnloadEvent event) {
         WorldConfig.get(event.getWorld()).onWorldUnload(event.getWorld());
-        WorldManager.closeWorldStreams(event.getWorld());
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
@@ -68,13 +67,33 @@ public class MWListener implements Listener {
         WorldConfig.get(event.getPlayer()).onPlayerEnter(event.getPlayer());
     }
 
+    private static boolean checkRespawnValid(PlayerRespawnEvent event) {
+        // Bukkit bug since MC 1.14: respawn event also occurs when players teleport back to the main world from the end
+        if (Common.evaluateMCVersion(">=", "1.14")) {
+            return event.getPlayer().getHealth() <= 0.0;
+        }
+
+        // Only occurred during an actual respawn on earlier versions
+        return true;
+    }
+
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerRespawnMonitor(PlayerRespawnEvent event) {
+        if (!checkRespawnValid(event)) {
+            // Save inventory before it is reloaded again
+            MyWorlds.plugin.getPlayerDataController().onSave(event.getPlayer());
+            return;
+        }
+
         WorldConfig.get(event.getPlayer()).onRespawn(event.getPlayer(), event.getRespawnLocation());
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onPlayerRespawn(PlayerRespawnEvent event) {
+        if (!checkRespawnValid(event)) {
+            return;
+        }
+
         // Update spawn position based on world configuration
         org.bukkit.World respawnWorld = event.getPlayer().getWorld();
         if (MyWorlds.forceMainWorldSpawn) {
@@ -106,7 +125,7 @@ public class MWListener implements Listener {
         teleportTracker.updatePlayerPosition(event.getPlayer(), event.getTo());
 
         // Water teleportation handling
-        if (MyWorlds.enablePortals) {
+        if (MyWorlds.waterPortalEnabled) {
             Block b = event.getTo().getBlock();
             if (Util.isWaterPortal(b)) {
                 boolean canTeleport = teleportTracker.canTeleport(event.getPlayer());
@@ -154,14 +173,14 @@ public class MWListener implements Listener {
 
     public void handlePortalEnterNextTick(Player player, Location from) {
         // Handle teleportation the next tick
-        final EntityPortalEvent portalEvent = new EntityPortalEvent(player, from, null, null);
+        final EntityPortalEvent portalEvent = Util.createEntityPortalEvent(player, from);
         CommonUtil.nextTick(new Runnable() {
             public void run() {
                 handlePortalEnter(portalEvent, false);
                 if (portalEvent.getTo() != null && !portalEvent.isCancelled()) {
                     // Use a travel agent if needed
                     Location to = portalEvent.getTo();
-                    if (portalEvent.useTravelAgent()) {
+                    if (Util.useTravelAgent(portalEvent)) {
                         to = WorldUtil.findSpawnLocation(to);
                     }
                     // This tends to happen with Bukkit logic...haha
@@ -194,6 +213,7 @@ public class MWListener implements Listener {
         // Handle player teleportation - portal check
         PortalType type = Util.findPortalType(enterLoc.getWorld(), enterLoc.getBlockX(), enterLoc.getBlockY(), enterLoc.getBlockZ());
         if (type == null) {
+            event.setCancelled(false); // MyWorlds doesn't handle this event
             return;
         }
 
@@ -217,7 +237,7 @@ public class MWListener implements Listener {
                 boolean available = true;
                 for (int dx = -4; dx <= 4 && available; dx++) {
                     for (int dz = -4; dz <= 4 && available; dz++) {
-                        available = WorldUtil.isChunkAvailable(to.getWorld(), chunkX + dx, chunkZ + dz);
+                        available &= WorldUtil.isChunkAvailable(to.getWorld(), chunkX + dx, chunkZ + dz);
                     }
                 }
                 if (!available) {
@@ -242,20 +262,21 @@ public class MWListener implements Listener {
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onPlayerPortal(PlayerPortalEvent event) {
-        if (!MyWorlds.enablePortals) {
+        if (!MyWorlds.endPortalEnabled && !MyWorlds.netherPortalEnabled) {
             return;
         }
         //Note! Event.getTo() can be null! Account for it!
 
         // Wrap inside an Entity portal event
-        EntityPortalEvent entityEvent = new EntityPortalEvent(event.getPlayer(), event.getFrom(), event.getTo(), event.getPortalTravelAgent());
-        entityEvent.useTravelAgent(event.useTravelAgent());
+        EntityPortalEvent entityEvent = Util.createEntityPortalEvent(event.getPlayer(), event.getFrom());
+        entityEvent.setTo(event.getTo());
+        Util.copyTravelAgent(event, entityEvent);
         handlePortalEnter(entityEvent, true);
         // Now, apply them again
         if (entityEvent.getTo() != null) {
             event.setTo(entityEvent.getTo());
         }
-        event.useTravelAgent(entityEvent.useTravelAgent());
+        Util.copyTravelAgent(entityEvent, event);
         event.setCancelled(entityEvent.isCancelled());
 
         // For ender portals we NEED to teleport away from the end world
@@ -286,7 +307,9 @@ public class MWListener implements Listener {
         final Location safeSpawn = WorldManager.getSafeSpawn(event.getFrom(), false);
 
         // Set a dummy destination to snap the player out of the glitch
-        event.useTravelAgent(false);
+        if (Util.hasTravelAgentField) {
+            event.useTravelAgent(false);
+        }
         event.setCancelled(false);
         event.setTo(mainWorld.getSpawnLocation());
 
@@ -301,14 +324,14 @@ public class MWListener implements Listener {
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onEntityPortal(EntityPortalEvent event) {
-        if (MyWorlds.enablePortals) {
+        if (MyWorlds.endPortalEnabled || MyWorlds.netherPortalEnabled) {
             handlePortalEnter(event, true);
         }
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onEntityPortalEnter(EntityPortalEnterEvent event) {
-        if (!(event.getEntity() instanceof Player) || !MyWorlds.enablePortals) {
+        if (!(event.getEntity() instanceof Player) || (!MyWorlds.endPortalEnabled && !MyWorlds.netherPortalEnabled)) {
             return;
         }
         Player player = (Player) event.getEntity();
@@ -348,13 +371,19 @@ public class MWListener implements Listener {
     public void onPlayerChangedWorld(final PlayerChangedWorldEvent event) {
         WorldConfig.get(event.getFrom()).onPlayerLeft(event.getPlayer());
         WorldConfig.get(event.getPlayer()).onPlayerEnter(event.getPlayer());
-        event.getPlayer().updateInventory();
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onCreatureSpawn(CreatureSpawnEvent event) {
         // Any creature spawns we couldn't cancel in PreSpawn we will cancel here
-        if (event.getSpawnReason() != SpawnReason.CUSTOM && (!MyWorlds.ignoreEggSpawns || event.getSpawnReason() != SpawnReason.SPAWNER_EGG)) {
+        boolean isCustomSpawn = (event.getSpawnReason() == SpawnReason.CUSTOM);
+        if (isCustomSpawn) {
+            String name = event.getEntityType().name();
+            if ("WANDERING_TRADER".equals(name) || "TRADER_LLAMA".equals(name)) {
+                isCustomSpawn = false;
+            }
+        }
+        if (!isCustomSpawn && (!MyWorlds.ignoreEggSpawns || event.getSpawnReason() != SpawnReason.SPAWNER_EGG)) {
             if (WorldConfig.get(event.getEntity()).spawnControl.isDenied(event.getEntity())) {
                 event.setCancelled(true);
             }
